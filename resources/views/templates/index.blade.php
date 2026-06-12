@@ -96,14 +96,19 @@
     @forelse($email as $t)
       <div class="border border-[#f3eede] rounded-lg overflow-hidden">
         <div class="flex items-center justify-between bg-[#fdfaf0]/40 px-4 py-2.5 border-b border-[#f3eede]">
-          <div class="flex items-center gap-2">
+          <div class="flex items-center gap-2 flex-wrap">
             <span class="font-semibold text-ink-800">{{ $t->label }}</span>
             <span class="text-[10px] text-gray-500 font-mono">{{ $t->key }}</span>
             @if(!$t->is_active)<span class="badge bg-gray-200 text-gray-700">Inactive</span>@endif
+            @if(!empty($t->attachments))
+              <span class="badge bg-blue-50 text-blue-700 border-blue-200 text-[10px]">
+                📎 {{ count($t->attachments) }} attachment{{ count($t->attachments) > 1 ? 's' : '' }}
+              </span>
+            @endif
           </div>
           <div class="flex gap-1">
             <button onclick="document.getElementById('edit-{{ $t->id }}').classList.toggle('hidden')" class="btn btn-ghost btn-sm">Edit</button>
-            <form method="POST" action="{{ route('templates.destroy',$t) }}" class="inline" onsubmit="return confirm('Delete this template?')">
+            <form method="POST" action="{{ route('templates.destroy',$t) }}" class="inline" onsubmit="return confirm('Delete this template and its attached files?')">
               @csrf @method('DELETE')
               <button class="btn btn-danger btn-sm">Delete</button>
             </form>
@@ -114,10 +119,23 @@
           <div class="text-sm font-semibold text-ink-800 mb-2">{{ $t->subject }}</div>
           <div class="text-xs text-gray-500 mb-1">Body:</div>
           <div class="text-sm whitespace-pre-wrap text-ink-800">{{ $t->body }}</div>
+          @if(!empty($t->attachments))
+            <div class="mt-3 pt-3 border-t border-dashed border-gold-200">
+              <div class="text-xs text-gray-500 mb-1">Attachments:</div>
+              <ul class="space-y-1">
+                @foreach($t->attachments as $att)
+                  <li class="text-xs flex items-center gap-2">
+                    <svg class="w-3.5 h-3.5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"/></svg>
+                    <a href="{{ asset('storage/'.$att) }}" target="_blank" class="text-gold-700 hover:underline truncate">{{ basename($att) }}</a>
+                  </li>
+                @endforeach
+              </ul>
+            </div>
+          @endif
         </div>
 
         <div id="edit-{{ $t->id }}" class="hidden p-4 bg-[#fdfaf0]/30 border-t border-[#f3eede]">
-          <form method="POST" action="{{ route('templates.update',$t) }}" class="space-y-3">
+          <form method="POST" action="{{ route('templates.update',$t) }}" enctype="multipart/form-data" class="space-y-3">
             @csrf @method('PUT')
             <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
               <div class="sm:col-span-2">
@@ -137,6 +155,30 @@
               <label class="form-label">Body</label>
               <textarea name="body" rows="6" class="form-textarea" required>{{ $t->body }}</textarea>
             </div>
+
+            {{-- EXISTING ATTACHMENTS --}}
+            @if(!empty($t->attachments))
+              <div>
+                <label class="form-label">Existing Attachments</label>
+                <div class="space-y-1.5 bg-white border border-[#f3eede] rounded-lg p-3">
+                  @foreach($t->attachments as $att)
+                    <label class="flex items-center gap-2 text-xs">
+                      <input type="checkbox" name="remove_attachment[]" value="{{ $att }}">
+                      <a href="{{ asset('storage/'.$att) }}" target="_blank" class="text-gold-700 hover:underline">{{ basename($att) }}</a>
+                      <span class="text-gray-400 ml-auto">tick to delete</span>
+                    </label>
+                  @endforeach
+                </div>
+              </div>
+            @endif
+
+            {{-- ADD NEW ATTACHMENTS --}}
+            <div>
+              <label class="form-label">Add New Attachments</label>
+              <input type="file" name="attachments[]" multiple class="form-input">
+              <div class="text-[11px] text-gray-500 mt-1">Max 10 MB per file. Multiple files allowed (Ctrl/Cmd + click).</div>
+            </div>
+
             <div class="flex items-center justify-between">
               <label class="flex items-center gap-2 text-sm">
                 <input type="checkbox" name="is_active" value="1" @checked($t->is_active)> Active
@@ -198,7 +240,7 @@
         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
       </button>
     </div>
-    <form method="POST" action="{{ route('templates.store') }}">
+    <form method="POST" action="{{ route('templates.store') }}" enctype="multipart/form-data">
       @csrf
       <input type="hidden" name="channel" value="email">
       <div class="modal-body space-y-3">
@@ -214,6 +256,11 @@
           <label class="form-label">Body <span class="text-rose-500">*</span></label>
           <textarea name="body" rows="8" class="form-textarea" placeholder="Hi {name}, ..." required></textarea>
           <div class="text-[11px] text-gray-500 mt-1">Use <code>{name}</code>, <code>{course}</code>, <code>{counselor}</code> as placeholders.</div>
+        </div>
+        <div>
+          <label class="form-label">Attachments</label>
+          <input type="file" name="attachments[]" multiple class="form-input">
+          <div class="text-[11px] text-gray-500 mt-1">Optional. Max 10 MB per file. Multiple files allowed.</div>
         </div>
         <label class="flex items-center gap-2 text-sm">
           <input type="checkbox" name="is_active" value="1" checked> Active

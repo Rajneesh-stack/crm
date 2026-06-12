@@ -50,6 +50,20 @@ class Lead extends Model
         'whatsapp', 'referral', 'walkin', 'cold_call', 'email', 'newspaper', 'event', 'other',
     ];
 
+    public const QUALIFICATIONS = [
+        '9th'             => 'Class 9th',
+        '10th'            => 'Class 10th',
+        '11th'            => 'Class 11th',
+        '12th'            => 'Class 12th',
+        'diploma'         => 'Diploma',
+        'iti'             => 'ITI',
+        'under_graduate'  => 'Under Graduate (Pursuing)',
+        'graduate'        => 'Graduate',
+        'post_graduate'   => 'Post Graduate',
+        'phd'             => 'PhD / Doctorate',
+        'other'           => 'Other',
+    ];
+
     public const COURSES = [
         'MBA', 'BBA', 'BCA', 'MCA', 'B.Tech', 'M.Tech', 'B.Com', 'M.Com',
         'Digital Marketing', 'Data Science', 'Full Stack Development',

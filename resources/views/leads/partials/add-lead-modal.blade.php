@@ -74,7 +74,12 @@
               </div>
               <div>
                 <label class="form-label">Qualification</label>
-                <input type="text" name="qualification" class="form-input" placeholder="e.g. B.Tech / MBA">
+                <select name="qualification" class="form-select">
+                  <option value="">-- Select --</option>
+                  @foreach(\App\Models\Lead::QUALIFICATIONS as $k => $v)
+                    <option value="{{ $k }}">{{ $v }}</option>
+                  @endforeach
+                </select>
               </div>
               <div>
                 <label class="form-label">Date of Birth</label>

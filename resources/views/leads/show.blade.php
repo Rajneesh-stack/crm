@@ -197,7 +197,7 @@
           </div>
 
           {{-- compose --}}
-          <form id="emailForm" method="POST" action="{{ route('leads.email.send',$lead) }}" class="p-5 space-y-3">
+          <form id="emailForm" method="POST" action="{{ route('leads.email.send',$lead) }}" enctype="multipart/form-data" class="p-5 space-y-3">
             @csrf
             <div class="flex flex-wrap items-center gap-2">
               <span class="text-xs font-semibold text-gray-500">To:</span>
@@ -216,6 +216,9 @@
                 </select>
               </label>
               <input type="hidden" name="template_key" id="emailTemplateKey" value="">
+              <div id="tplAttachInfo" class="text-[11px] text-gold-700 mt-1 hidden">
+                📎 <span id="tplAttachList"></span> will be attached from the template.
+              </div>
             </div>
             <div>
               <label class="form-label">Subject</label>
@@ -224,6 +227,11 @@
             <div>
               <label class="form-label">Body</label>
               <textarea name="body" id="emailBody" rows="6" class="form-textarea" required></textarea>
+            </div>
+            <div>
+              <label class="form-label">Add Attachments <span class="text-xs text-gray-500 normal-case">(optional, in addition to template)</span></label>
+              <input type="file" name="attachments[]" multiple class="form-input">
+              <div class="text-[11px] text-gray-500 mt-1">Max 10 MB per file.</div>
             </div>
             <div class="flex justify-end">
               <button class="btn btn-primary">
@@ -400,7 +408,7 @@
               'DOB' => $lead->date_of_birth?->format('d M Y'),
               'Gender' => $lead->gender ? ucfirst($lead->gender) : null,
               'Occupation' => $lead->occupation,
-              'Qualification' => $lead->qualification.($lead->passing_year?' ('.$lead->passing_year.')':''),
+              'Qualification' => (\App\Models\Lead::QUALIFICATIONS[$lead->qualification] ?? $lead->qualification).($lead->passing_year?' ('.$lead->passing_year.')':''),
               'Institute' => $lead->institute,
               'Company' => $lead->company.($lead->designation?' — '.$lead->designation:''),
               'Experience' => $lead->experience_years ? $lead->experience_years.' yrs' : null,
@@ -525,6 +533,16 @@
             document.getElementById('emailSubject').value = emailTpl[k].subject;
             document.getElementById('emailBody').value    = emailTpl[k].body;
             document.getElementById('emailTemplateKey').value = k;
+            // show attachment hint if the template has files attached
+            const info = document.getElementById('tplAttachInfo');
+            const list = document.getElementById('tplAttachList');
+            const atts = (emailTpl[k].attachments || []);
+            if (atts.length && info && list) {
+              list.textContent = atts.join(', ');
+              info.classList.remove('hidden');
+            } else if (info) {
+              info.classList.add('hidden');
+            }
           }
         });
       }

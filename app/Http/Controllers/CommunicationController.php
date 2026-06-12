@@ -71,10 +71,11 @@ class CommunicationController extends Controller
         $this->authorizeLead($lead);
 
         $data = $request->validate([
-            'subject'      => ['required', 'string', 'max:255'],
-            'body'         => ['required', 'string', 'max:20000'],
-            'template_key' => ['nullable', 'string', 'max:191'],
-            'to_address'   => ['nullable', 'email', 'max:191'],
+            'subject'        => ['required', 'string', 'max:255'],
+            'body'           => ['required', 'string', 'max:20000'],
+            'template_key'   => ['nullable', 'string', 'max:191'],
+            'to_address'     => ['nullable', 'email', 'max:191'],
+            'attachments.*'  => ['nullable', 'file', 'max:10240'], // 10 MB each
         ]);
 
         $user = auth()->user();
@@ -85,6 +86,27 @@ class CommunicationController extends Controller
 
         $subject = $this->fillPlaceholders($data['subject'], $lead, $user);
         $body    = $this->fillPlaceholders($data['body'],    $lead, $user);
+
+        // ------ Collect attachments ------
+        // 1) Files attached to the selected template (admin-managed)
+        $templateAttachmentPaths = [];
+        if (!empty($data['template_key'])) {
+            $tpl = \App\Models\MessageTemplate::channel('email')
+                ->where('key', $data['template_key'])->first();
+            if ($tpl && !empty($tpl->attachments)) {
+                foreach ($tpl->attachments as $rel) {
+                    $abs = storage_path('app/public/' . $rel);
+                    if (is_file($abs)) $templateAttachmentPaths[] = $abs;
+                }
+            }
+        }
+        // 2) Ad-hoc files uploaded with this specific send (stored temporarily for the request)
+        $adhocAttachments = [];
+        if ($request->hasFile('attachments')) {
+            foreach ($request->file('attachments') as $f) {
+                $adhocAttachments[] = ['path' => $f->getRealPath(), 'name' => $f->getClientOriginalName()];
+            }
+        }
 
         $comm = Communication::create([
             'lead_id'      => $lead->id,
@@ -100,20 +122,27 @@ class CommunicationController extends Controller
         ]);
 
         try {
-            Mail::raw($body, function ($m) use ($toEmail, $lead, $subject, $user) {
+            Mail::raw($body, function ($m) use ($toEmail, $lead, $subject, $user, $templateAttachmentPaths, $adhocAttachments) {
                 $m->to($toEmail, $lead->name)->subject($subject);
                 if ($user && $user->email) {
                     $m->replyTo($user->email, $user->name);
                 }
+                foreach ($templateAttachmentPaths as $abs) {
+                    $m->attach($abs);
+                }
+                foreach ($adhocAttachments as $a) {
+                    $m->attach($a['path'], ['as' => $a['name']]);
+                }
             });
             $comm->update(['status' => 'sent']);
+            $attCount = count($templateAttachmentPaths) + count($adhocAttachments);
             Activity::log([
                 'lead_id'     => $lead->id,
                 'user_id'     => $user->id,
                 'action'      => 'email_sent',
-                'description' => "Email sent: ".$subject,
+                'description' => "Email sent: ".$subject . ($attCount ? " (with $attCount attachment".($attCount > 1 ? 's' : '').")" : ''),
             ]);
-            return back()->with('success', 'Email sent.');
+            return back()->with('success', 'Email sent' . ($attCount ? " with $attCount attachment".($attCount > 1 ? 's' : '') : '') . '.');
         } catch (\Throwable $e) {
             $comm->update(['status' => 'failed', 'error' => $e->getMessage()]);
             return back()->with('error', 'Email send failed: ' . $e->getMessage());

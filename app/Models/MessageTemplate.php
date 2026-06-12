@@ -6,11 +6,12 @@ use Illuminate\Database\Eloquent\Model;
 
 class MessageTemplate extends Model
 {
-    protected $fillable = ['channel', 'key', 'label', 'subject', 'body', 'is_active', 'sort_order'];
+    protected $fillable = ['channel', 'key', 'label', 'subject', 'body', 'attachments', 'is_active', 'sort_order'];
 
     protected $casts = [
-        'is_active'  => 'boolean',
-        'sort_order' => 'integer',
+        'is_active'   => 'boolean',
+        'sort_order'  => 'integer',
+        'attachments' => 'array',
     ];
 
     public function scopeActive($q)

@@ -105,7 +105,7 @@ class LeadController extends Controller
             'date_of_birth'   => 'nullable|date',
             'gender'          => 'nullable|in:male,female,other',
             'occupation'      => 'nullable|string|max:191',
-            'qualification'   => 'nullable|string|max:191',
+            'qualification'   => 'nullable|string|max:191|in:'.implode(',', array_keys(Lead::QUALIFICATIONS)),
             'passing_year'    => 'nullable|string|max:10',
             'institute'       => 'nullable|string|max:191',
             'company'         => 'nullable|string|max:191',
@@ -232,7 +232,12 @@ class LeadController extends Controller
             : config('messaging.text_templates', []);
 
         $emailTemplates = $emailRows->isNotEmpty()
-            ? $emailRows->mapWithKeys(fn ($t) => [$t->key => ['label' => $t->label, 'subject' => $t->subject, 'body' => $t->body]])->all()
+            ? $emailRows->mapWithKeys(fn ($t) => [$t->key => [
+                'label'       => $t->label,
+                'subject'     => $t->subject,
+                'body'        => $t->body,
+                'attachments' => collect($t->attachments ?? [])->map(fn ($p) => basename($p))->all(),
+            ]])->all()
             : config('messaging.email_templates', []);
 
         $whatsappReady = app(\App\Services\WhatsAppService::class)->isConfigured();
@@ -280,7 +285,7 @@ class LeadController extends Controller
             'date_of_birth'   => 'nullable|date',
             'gender'          => 'nullable|in:male,female,other',
             'occupation'      => 'nullable|string|max:191',
-            'qualification'   => 'nullable|string|max:191',
+            'qualification'   => 'nullable|string|max:191|in:'.implode(',', array_keys(Lead::QUALIFICATIONS)),
             'company'         => 'nullable|string|max:191',
             'designation'     => 'nullable|string|max:191',
             'address'         => 'nullable|string',

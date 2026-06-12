@@ -5,16 +5,29 @@
 @section('content')
   <div class="card mb-5">
     <div class="card-body">
-      <form method="GET" class="grid grid-cols-1 md:grid-cols-4 gap-3">
+      <form method="GET" class="grid grid-cols-1 md:grid-cols-{{ auth()->user()->isAdmin() ? '5' : '4' }} gap-3">
         <div>
           <label class="form-label">Action</label>
           <select name="action" class="form-select">
             <option value="">All</option>
-            @foreach(['lead_created','lead_updated','assigned','reassigned','status_changed','comment_added','followup_added','converted','lost','bulk_imported'] as $a)
+            @foreach(['lead_created','lead_updated','assigned','reassigned','status_changed','comment_added','followup_added','converted','lost','bulk_imported','whatsapp_sent','whatsapp_received','email_sent'] as $a)
               <option value="{{ $a }}" @selected(request('action')===$a)>{{ ucfirst(str_replace('_',' ',$a)) }}</option>
             @endforeach
           </select>
         </div>
+        @if(auth()->user()->isAdmin())
+          <div>
+            <label class="form-label">Counselor</label>
+            <select name="counselor_id" class="form-select">
+              <option value="">All Counselors</option>
+              @foreach($counselors as $c)
+                <option value="{{ $c->id }}" @selected(request('counselor_id')==$c->id)>
+                  {{ $c->name }}{{ !$c->is_active ? ' (inactive)' : '' }}
+                </option>
+              @endforeach
+            </select>
+          </div>
+        @endif
         <div>
           <label class="form-label">From</label>
           <input type="date" name="from" value="{{ request('from') }}" class="form-input">
