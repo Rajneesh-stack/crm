@@ -237,9 +237,12 @@ class LeadController extends Controller
 
         $whatsappReady = app(\App\Services\WhatsAppService::class)->isConfigured();
 
+        // Real Meta-approved templates — required for first contact / outside the 24-hr window.
+        $approvedTemplates = config('messaging.whatsapp_approved_templates', []);
+
         return view('leads.show', compact(
             'lead', 'counselors', 'commentsCount', 'followupsCount', 'completedFollowups',
-            'communications', 'messagingTemplates', 'emailTemplates', 'whatsappReady'
+            'communications', 'messagingTemplates', 'emailTemplates', 'whatsappReady', 'approvedTemplates'
         ));
     }
 

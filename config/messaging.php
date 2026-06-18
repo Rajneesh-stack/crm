@@ -36,11 +36,21 @@ return [
     ],
 
     'whatsapp_approved_templates' => [
-        // 'hello_world' => [
-        //     'label'   => 'Meta hello_world',
-        //     'name'    => 'hello_world',
-        //     'language'=> 'en_US',
-        //     'params'  => [], // names of body placeholders, in order
+        // Meta gives every WABA this pre-approved template by default — use it to
+        // verify end-to-end delivery works. Add your own approved templates below.
+        'hello_world' => [
+            'label'    => 'Meta hello_world (test)',
+            'name'     => 'hello_world',
+            'language' => 'en_US',
+            'params'   => [], // names of body placeholders, in order
+            'preview'  => 'Hello World! Welcome and congratulations!! This message demonstrates your ability to send a WhatsApp message.',
+        ],
+        // 'welcome_lead' => [
+        //     'label'    => 'Welcome (first contact)',
+        //     'name'     => 'welcome_lead',     // exact name as approved in Meta
+        //     'language' => 'en_US',
+        //     'params'   => ['name'],           // placeholder order: {{1}} = name
+        //     'preview'  => 'Hello {name}, thanks for your interest!',
         // ],
     ],
 

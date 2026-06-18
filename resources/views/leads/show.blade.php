@@ -15,14 +15,14 @@
 
       {{-- Lead header --}}
       <div class="card">
-        <div class="card-body">
-          <div class="flex items-start gap-4">
-            <div class="w-16 h-16 rounded-full flex items-center justify-center font-bold text-white text-2xl flex-shrink-0" style="background:linear-gradient(135deg,#b8923d,#7d6122);">
+        <div class="card-body" style="padding:1rem 1.25rem;">
+          <div class="flex items-start gap-3">
+            <div class="w-11 h-11 rounded-full flex items-center justify-center font-bold text-white text-lg flex-shrink-0" style="background:linear-gradient(135deg,#b8923d,#7d6122);">
               {{ strtoupper(substr($lead->name,0,1)) }}
             </div>
             <div class="flex-1 min-w-0">
               <div class="flex flex-wrap items-center gap-2">
-                <h2 class="font-serif text-3xl text-ink-900">{{ $lead->name }}</h2>
+                <h2 class="font-serif text-2xl text-ink-900">{{ $lead->name }}</h2>
                 <span class="badge {{ $lead->status_color }}">{{ $lead->status_label }}</span>
                 @if($lead->statusChangedBy)
                   <span class="text-[11px] text-gray-500 italic">
@@ -32,7 +32,7 @@
                 @endif
                 @if($lead->priority==='high')<span class="badge bg-rose-100 text-rose-700 border-rose-300">High Priority</span>@endif
               </div>
-              <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-3 text-sm">
+              <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 mt-2 text-sm">
                 <div><div class="text-xs text-gray-500">Phone</div><div class="font-semibold">{{ $lead->phone }}</div></div>
                 @if($lead->email)<div><div class="text-xs text-gray-500">Email</div><div class="font-semibold truncate">{{ $lead->email }}</div></div>@endif
                 @if($lead->course)<div><div class="text-xs text-gray-500">Course</div><div class="font-semibold">{{ $lead->course }}</div></div>@endif
@@ -50,26 +50,26 @@
             $emailsSentTotal = $communications->where('channel','email')->where('status','sent')->count();
             $waSentTotal     = $communications->where('channel','whatsapp')->where('status','sent')->count();
           @endphp
-          <div class="grid grid-cols-3 sm:grid-cols-5 gap-3 mt-5 pt-4 border-t border-[#f3eede]">
+          <div class="grid grid-cols-3 sm:grid-cols-5 gap-2 mt-3 pt-3 border-t border-[#f3eede]">
             <div class="text-center">
-              <div class="text-2xl font-bold text-ink-900">{{ $followupsCount }}</div>
-              <div class="text-[11px] uppercase tracking-wider text-gold-700 font-semibold">Follow-ups</div>
+              <div class="text-lg font-bold text-ink-900 leading-tight">{{ $followupsCount }}</div>
+              <div class="text-[10px] uppercase tracking-wider text-gold-700 font-semibold">Follow-ups</div>
             </div>
             <div class="text-center">
-              <div class="text-2xl font-bold text-emerald-600">{{ $completedFollowups }}</div>
-              <div class="text-[11px] uppercase tracking-wider text-gold-700 font-semibold">Completed</div>
+              <div class="text-lg font-bold text-emerald-600 leading-tight">{{ $completedFollowups }}</div>
+              <div class="text-[10px] uppercase tracking-wider text-gold-700 font-semibold">Completed</div>
             </div>
             <div class="text-center">
-              <div class="text-2xl font-bold text-blue-600">{{ $commentsCount }}</div>
-              <div class="text-[11px] uppercase tracking-wider text-gold-700 font-semibold">Comments</div>
+              <div class="text-lg font-bold text-blue-600 leading-tight">{{ $commentsCount }}</div>
+              <div class="text-[10px] uppercase tracking-wider text-gold-700 font-semibold">Comments</div>
             </div>
             <div class="text-center">
-              <div class="text-2xl font-bold text-purple-600">{{ $emailsSentTotal }}</div>
-              <div class="text-[11px] uppercase tracking-wider text-gold-700 font-semibold">Emails Sent</div>
+              <div class="text-lg font-bold text-purple-600 leading-tight">{{ $emailsSentTotal }}</div>
+              <div class="text-[10px] uppercase tracking-wider text-gold-700 font-semibold">Emails Sent</div>
             </div>
             <div class="text-center">
-              <div class="text-2xl font-bold text-emerald-700">{{ $waSentTotal }}</div>
-              <div class="text-[11px] uppercase tracking-wider text-gold-700 font-semibold">WhatsApps Sent</div>
+              <div class="text-lg font-bold text-emerald-700 leading-tight">{{ $waSentTotal }}</div>
+              <div class="text-[10px] uppercase tracking-wider text-gold-700 font-semibold">WhatsApps Sent</div>
             </div>
           </div>
         </div>
@@ -84,6 +84,15 @@
         $tplEmail = collect($emailTemplates)->mapWithKeys(fn($t,$k)=>[$k => [
           'subject'=>strtr($t['subject'], ['{name}'=>$lead->name,'{course}'=>$lead->course?:'our program','{counselor}'=>auth()->user()->name]),
           'body'   =>strtr($t['body'],    ['{name}'=>$lead->name,'{course}'=>$lead->course?:'our program','{counselor}'=>auth()->user()->name]),
+        ]])->all();
+        // Real Meta-approved templates (for first contact / outside the 24-hr window)
+        $tplApproved = collect($approvedTemplates ?? [])->mapWithKeys(fn($t,$k)=>[$k => [
+          'name'     => $t['name'] ?? $k,
+          'language' => $t['language'] ?? 'en_US',
+          'preview'  => strtr($t['preview'] ?? '[Template: '.($t['name'] ?? $k).']', [
+            '{name}'=>$lead->name, '{course}'=>$lead->course?:'our program',
+            '{counselor}'=>auth()->user()->name, '{phone}'=>$lead->phone, '{email}'=>$lead->email,
+          ]),
         ]])->all();
       @endphp
       <div class="card" id="commCard">
@@ -120,7 +129,7 @@
         {{-- WHATSAPP TAB --}}
         <div data-tab-panel="whatsapp">
           {{-- chat history --}}
-          <div class="px-5 py-4 border-b border-[#f3eede] bg-[#fdfaf0]/30" style="max-height:280px; overflow-y:auto;" id="waHistory">
+          <div class="px-5 py-4 border-b border-[#f3eede] bg-[#fdfaf0]/30" style="max-height:280px; overflow-y:auto;" id="waHistory" data-thread-url="{{ route('leads.whatsapp.thread', $lead) }}">
             @php $waMsgs = $communications->where('channel','whatsapp'); @endphp
             @forelse($waMsgs as $m)
               <div class="flex {{ $m->direction==='out' ? 'justify-end' : 'justify-start' }} mb-2">
@@ -129,8 +138,30 @@
                   <div class="text-sm whitespace-pre-wrap">{{ $m->body }}</div>
                   <div class="text-[10px] text-gray-500 mt-1 flex items-center gap-1 justify-end">
                     {{ $m->created_at->format('d M, h:i A') }}
-                    @if($m->status==='sent')<svg class="w-3 h-3 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>@endif
-                    @if($m->status==='failed')<span class="text-rose-600 font-semibold">Failed</span>@endif
+                    @if($m->direction==='out')
+                      @php
+                        // WhatsApp-style delivery ticks: queued 🕓 → sent ✓ → delivered ✓✓ → read ✓✓(blue) → failed ⚠
+                        $st = $m->status;
+                        $double = in_array($st, ['delivered','read'], true);
+                        $tickColor = $st==='read' ? 'text-sky-500' : 'text-gray-400';
+                        $label = ['queued'=>'Queued','sent'=>'Sent','delivered'=>'Delivered','read'=>'Read','failed'=>'Failed'][$st] ?? ucfirst((string)$st);
+                      @endphp
+                      @if($st==='failed')
+                        <span class="text-rose-600 font-semibold inline-flex items-center gap-0.5" title="Message failed to send">
+                          <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12"/></svg>Failed
+                        </span>
+                      @elseif($st==='queued')
+                        <svg class="w-3 h-3 text-gray-400" title="Queued" fill="none" stroke="currentColor" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" stroke-width="2"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 7v5l3 2"/></svg>
+                      @else
+                        {{-- single or double tick --}}
+                        <span class="inline-flex items-center {{ $tickColor }}" title="{{ $label }}">
+                          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M1 13l4 4L15 7"/>
+                            @if($double)<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M8 13l4 4L23 7"/>@endif
+                          </svg>
+                        </span>
+                      @endif
+                    @endif
                   </div>
                 </div>
               </div>
@@ -140,7 +171,7 @@
           </div>
 
           {{-- compose --}}
-          <form method="POST" action="{{ route('leads.whatsapp.send',$lead) }}" class="p-5 space-y-3">
+          <form method="POST" action="{{ route('leads.whatsapp.send',$lead) }}" class="p-5 space-y-3" id="waForm">
             @csrf
             <div class="flex flex-wrap items-center gap-2">
               <span class="text-xs font-semibold text-gray-500">To:</span>
@@ -151,7 +182,7 @@
             </div>
             <div>
               <label class="form-label flex items-center justify-between">
-                <span>Message</span>
+                <span>Message <span class="text-[10px] text-gray-400 font-normal">(free-text — only within 24-hr window)</span></span>
                 <select id="waTemplateSel" class="form-select" style="max-width:200px;">
                   <option value="">Insert template…</option>
                   @foreach($messagingTemplates as $key => $t)
@@ -159,12 +190,30 @@
                   @endforeach
                 </select>
               </label>
-              <textarea name="body" id="waBody" rows="3" placeholder="Type a message…" class="form-textarea" required></textarea>
-              <input type="hidden" name="template_key" id="waTemplateKey" value="">
+              <textarea name="body" id="waBody" rows="3" placeholder="Type a message…  (Enter to send, Shift+Enter for new line)" class="form-textarea" required></textarea>
+              <input type="hidden" name="template_key"  id="waTemplateKey"  value="">
+              <input type="hidden" name="template_name" id="waTemplateName" value="">
+              <input type="hidden" name="language"      id="waLanguage"     value="">
               <div class="text-[11px] text-gray-500 mt-1">
                 Tip: WhatsApp Cloud API allows free-text only within 24 hrs of the customer's last reply. For first outreach, use an approved template configured in Meta Business Manager.
               </div>
             </div>
+            @if(!empty($approvedTemplates))
+            <div>
+              <label class="form-label flex items-center justify-between">
+                <span class="text-emerald-700 font-semibold">✅ Approved template (works for first contact)</span>
+                <select id="waApprovedSel" class="form-select" style="max-width:240px;">
+                  <option value="">— Send approved template —</option>
+                  @foreach($approvedTemplates as $key => $t)
+                    <option value="{{ $key }}">{{ $t['label'] ?? ($t['name'] ?? $key) }}</option>
+                  @endforeach
+                </select>
+              </label>
+              <div class="text-[11px] text-gray-500 mt-1">
+                Choosing one sends a real Meta-approved template (delivers even with no open 24-hr window). Free-text above is only for replies within 24 hrs.
+              </div>
+            </div>
+            @endif
             <div class="flex justify-end">
               <button class="btn btn-primary">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/></svg>
@@ -477,8 +526,9 @@
   </div>
 
   @php
-    $waTplJson    = json_encode($tplWa,    JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT);
-    $emailTplJson = json_encode($tplEmail, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT);
+    $waTplJson       = json_encode($tplWa,       JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT);
+    $waApprovedJson  = json_encode($tplApproved, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT);
+    $emailTplJson    = json_encode($tplEmail,    JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT);
   @endphp
   <script>
     (function () {
@@ -503,16 +553,166 @@
       if (waHist) waHist.scrollTop = waHist.scrollHeight;
 
       // ----- WhatsApp template insertion -----
+      const waBody  = document.getElementById('waBody');
+      const waTplKeyEl  = document.getElementById('waTemplateKey');
+      const waTplNameEl = document.getElementById('waTemplateName');
+      const waLangEl    = document.getElementById('waLanguage');
+
+      // Clears the "real approved template" selection so the next send is free-text.
+      const clearApproved = () => {
+        if (waTplNameEl) waTplNameEl.value = '';
+        if (waLangEl)    waLangEl.value    = '';
+        const a = document.getElementById('waApprovedSel');
+        if (a) a.value = '';
+      };
+
       const waTpl = {!! $waTplJson !!};
       const waSel = document.getElementById('waTemplateSel');
       if (waSel) {
         waSel.addEventListener('change', () => {
           const k = waSel.value;
           if (k && waTpl[k]) {
-            document.getElementById('waBody').value = waTpl[k];
-            document.getElementById('waTemplateKey').value = k;
+            waBody.value = waTpl[k];
+            waTplKeyEl.value = k;
+            clearApproved(); // inserting free-text → not a real template send
           }
         });
+      }
+
+      // ----- Real Meta-approved template send (first contact / outside 24-hr window) -----
+      const waApproved = {!! $waApprovedJson !!};
+      const waApprovedSel = document.getElementById('waApprovedSel');
+      if (waApprovedSel) {
+        waApprovedSel.addEventListener('change', () => {
+          const k = waApprovedSel.value;
+          if (k && waApproved[k]) {
+            waTplNameEl.value = waApproved[k].name;
+            waLangEl.value    = waApproved[k].language;
+            waTplKeyEl.value  = k;
+            // Show the preview text so the field validates and the sent record reads sensibly.
+            waBody.value = waApproved[k].preview || ('[Template: ' + waApproved[k].name + ']');
+          } else {
+            clearApproved();
+          }
+        });
+      }
+
+      // Typing manually means a free-text send — drop any pending approved-template selection.
+      if (waBody) {
+        waBody.addEventListener('input', () => {
+          if (waTplNameEl && waTplNameEl.value) clearApproved();
+        });
+
+        // Enter = send, Shift+Enter = new line
+        waBody.addEventListener('keydown', (e) => {
+          if (e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault();
+            const form = document.getElementById('waForm');
+            if (form && waBody.value.trim() !== '') {
+              if (form.requestSubmit) form.requestSubmit();
+              else form.submit();
+            }
+          }
+        });
+      }
+
+      // ----- Live WhatsApp thread polling (new replies + delivery/read ticks, no refresh) -----
+      const waHistEl = document.getElementById('waHistory');
+      if (waHistEl && waHistEl.dataset.threadUrl) {
+        const esc = (s) => { const d = document.createElement('div'); d.textContent = s == null ? '' : s; return d.innerHTML; };
+
+        // Builds the status tick markup for an outgoing message.
+        const tickHtml = (status) => {
+          if (status === 'failed') {
+            return '<span class="text-rose-600 font-semibold inline-flex items-center gap-0.5" title="Message failed to send">'
+              + '<svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12"/></svg>Failed</span>';
+          }
+          if (status === 'queued') {
+            return '<svg class="w-3 h-3 text-gray-400" title="Queued" fill="none" stroke="currentColor" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" stroke-width="2"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 7v5l3 2"/></svg>';
+          }
+          const double = (status === 'delivered' || status === 'read');
+          const color  = (status === 'read') ? 'text-sky-500' : 'text-gray-400';
+          const label  = ({queued:'Queued',sent:'Sent',delivered:'Delivered',read:'Read'})[status] || status;
+          return '<span class="inline-flex items-center ' + color + '" title="' + label + '">'
+            + '<svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">'
+            + '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M1 13l4 4L15 7"/>'
+            + (double ? '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M8 13l4 4L23 7"/>' : '')
+            + '</svg></span>';
+        };
+
+        const renderThread = (messages) => {
+          if (!messages.length) {
+            waHistEl.innerHTML = '<div class="text-center text-xs text-gray-400 py-6">No WhatsApp messages yet. Send the first one below.</div>';
+            return;
+          }
+          waHistEl.innerHTML = messages.map((m) => {
+            const out = m.direction === 'out';
+            const bubble = out ? 'bg-emerald-100 text-emerald-900' : 'bg-white text-ink-900 border border-[#f3eede]';
+            return '<div class="flex ' + (out ? 'justify-end' : 'justify-start') + ' mb-2">'
+              + '<div class="max-w-[80%] px-3 py-2 rounded-lg shadow-sm ' + bubble + '">'
+              + '<div class="text-sm whitespace-pre-wrap">' + esc(m.body) + '</div>'
+              + '<div class="text-[10px] text-gray-500 mt-1 flex items-center gap-1 justify-end">'
+              + esc(m.time) + (out ? tickHtml(m.status) : '')
+              + '</div></div></div>';
+          }).join('');
+        };
+
+        let lastSig = '';
+        const poll = async () => {
+          try {
+            const res = await fetch(waHistEl.dataset.threadUrl, { headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' } });
+            if (!res.ok) return;
+            const data = await res.json();
+            const msgs = data.messages || [];
+            // Only touch the DOM if something actually changed (avoids scroll jumps).
+            const sig = msgs.map((m) => m.id + ':' + m.status).join('|');
+            if (sig === lastSig) return;
+            const atBottom = waHistEl.scrollHeight - waHistEl.scrollTop - waHistEl.clientHeight < 40;
+            const grew = msgs.length > (lastSig ? lastSig.split('|').length : 0);
+            lastSig = sig;
+            renderThread(msgs);
+            if (atBottom || grew) waHistEl.scrollTop = waHistEl.scrollHeight;
+          } catch (_) { /* network hiccup — try again next tick */ }
+        };
+
+        poll();                 // initial sync
+        setInterval(poll, 1000); // every 5s
+
+        // ----- AJAX send (no full page reload) -----
+        const waForm = document.getElementById('waForm');
+        if (waForm) {
+          waForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const body = waBody.value.trim();
+            const isTemplate = waTplNameEl && waTplNameEl.value;
+            if (!body && !isTemplate) return; // nothing to send
+
+            const btn = waForm.querySelector('button:not([type]), button[type="submit"]');
+            if (btn) { btn.disabled = true; btn.style.opacity = '0.6'; }
+
+            try {
+              const res = await fetch(waForm.action, {
+                method: 'POST',
+                headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
+                body: new FormData(waForm),
+              });
+              const data = await res.json().catch(() => ({}));
+              if (res.ok && data.ok) {
+                waBody.value = '';
+                waTplKeyEl.value = '';
+                clearApproved();
+                if (waSel) waSel.value = '';
+                await poll(); // show the just-sent message instantly
+              } else {
+                alert(data.error || 'Message send failed. Please try again.');
+              }
+            } catch (_) {
+              alert('Network error — message not sent. Please try again.');
+            } finally {
+              if (btn) { btn.disabled = false; btn.style.opacity = ''; }
+            }
+          });
+        }
       }
 
       // ----- Email template insertion -----

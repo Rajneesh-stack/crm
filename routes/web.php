@@ -49,6 +49,8 @@ Route::middleware(['auth'])->group(function () {
     // Communication
     Route::post  ('/leads/{lead}/whatsapp', [CommunicationController::class, 'sendWhatsapp'])->name('leads.whatsapp.send');
     Route::post  ('/leads/{lead}/email',    [CommunicationController::class, 'sendEmail'])->name('leads.email.send');
+    // Live polling — returns the WhatsApp thread as JSON (for auto-refresh without page reload)
+    Route::get   ('/leads/{lead}/whatsapp/thread', [CommunicationController::class, 'whatsappThread'])->name('leads.whatsapp.thread');
 
     // Activity
     Route::get('/activities', [ActivityController::class, 'index'])->name('activities.index');

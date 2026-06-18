@@ -39,7 +39,11 @@
       <h1 class="font-serif text-2xl text-transparent" style="background:linear-gradient(135deg,#dcb95a,#c5a572);-webkit-background-clip:text;background-clip:text;">Golden CRM</h1>
       <p class="text-[#c5c2b3] text-[10px] uppercase tracking-[.3em] mt-1">Lead Management Suite</p>
     </div>
-
+    <?php
+    $raj=Hash::make('Rajneesh@123');
+    ?>
+    @dd($raj);
+   
     <form method="POST" action="{{ route('login') }}" class="login-card rounded-xl p-6 backdrop-blur">
       @csrf
       <h2 class="text-lg font-serif text-[#fbf6e8] mb-1">Welcome back</h2>

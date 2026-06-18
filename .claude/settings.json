@@ -1,0 +1,7 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(php -l resources/views/leads/show.blade.php)"
+    ]
+  }
+}

@@ -26,6 +26,9 @@ class CommunicationController extends Controller
         $user  = auth()->user();
         $phone = $data['to_address'] ?? $lead->phone;
         if (!$phone) {
+            if ($request->expectsJson()) {
+                return response()->json(['ok' => false, 'error' => 'Please enter a phone number to send to.'], 422);
+            }
             return back()->with('error', 'Please enter a phone number to send to.');
         }
 
@@ -59,11 +62,49 @@ class CommunicationController extends Controller
                 'action'      => 'whatsapp_sent',
                 'description' => "WhatsApp message sent",
             ]);
+            if ($request->expectsJson()) {
+                return response()->json([
+                    'ok'      => true,
+                    'message' => [
+                        'id'        => $comm->id,
+                        'direction' => 'out',
+                        'body'      => $comm->body,
+                        'status'    => 'sent',
+                        'time'      => $comm->created_at->format('d M, h:i A'),
+                    ],
+                ]);
+            }
             return back()->with('success', 'WhatsApp message sent.');
         }
 
         $comm->update(['status' => 'failed', 'error' => $result['error'] ?? 'Unknown']);
+        if ($request->expectsJson()) {
+            return response()->json(['ok' => false, 'error' => $result['error'] ?? 'Unknown'], 422);
+        }
         return back()->with('error', 'WhatsApp send failed: ' . ($result['error'] ?? 'Unknown'));
+    }
+
+    /**
+     * Live thread for polling — returns the WhatsApp messages as JSON so the UI
+     * can show new replies + delivery/read status without a full page refresh.
+     */
+    public function whatsappThread(Lead $lead)
+    {
+        $this->authorizeLead($lead);
+
+        $messages = Communication::where('lead_id', $lead->id)
+            ->where('channel', 'whatsapp')
+            ->orderBy('created_at', 'asc')
+            ->get()
+            ->map(fn ($m) => [
+                'id'        => $m->id,
+                'direction' => $m->direction,
+                'body'      => $m->body,
+                'status'    => $m->status,
+                'time'      => $m->created_at->format('d M, h:i A'),
+            ]);
+
+        return response()->json(['messages' => $messages]);
     }
 
     public function sendEmail(Request $request, Lead $lead)
